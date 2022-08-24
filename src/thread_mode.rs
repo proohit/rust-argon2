@@ -7,6 +7,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::str::FromStr;
+
 use serde::Deserialize;
 
 /// The thread mode used to perform the hashing.
@@ -41,6 +43,18 @@ impl ThreadMode {
 impl Default for ThreadMode {
     fn default() -> ThreadMode {
         ThreadMode::Sequential
+    }
+}
+
+impl FromStr for ThreadMode {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "sequential" => Ok(ThreadMode::Sequential),
+            "parallel" => Ok(ThreadMode::Parallel),
+            _ => Err(()),
+        }
     }
 }
 

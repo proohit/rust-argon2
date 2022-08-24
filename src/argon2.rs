@@ -18,6 +18,8 @@ use crate::version::Version;
 
 use constant_time_eq::constant_time_eq;
 use wasm_bindgen::prelude::*;
+extern crate console_error_panic_hook;
+use std::panic;
 
 /// Returns the length of the encoded string.
 ///
@@ -107,6 +109,7 @@ pub fn hash_encoded(pwd: &[u8], salt: &[u8], config: &Config) -> String {
 
 #[wasm_bindgen]
 pub fn hash_encoded_js(pwd: String, salt: String, config_json: String) -> String {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
     let config = Config::from_json(config_json.as_str());
     hash_encoded(pwd.as_bytes(), salt.as_bytes(), &config)
 }

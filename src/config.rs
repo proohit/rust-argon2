@@ -6,7 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::str::FromStr;
+
 use serde::Deserialize;
+use serde_json::Value;
 
 use crate::common;
 use crate::thread_mode::ThreadMode;
@@ -65,9 +68,37 @@ impl<'a> Config<'a> {
     pub fn uses_sequential(&self) -> bool {
         self.thread_mode == ThreadMode::Sequential || self.lanes == 1
     }
-    // create config object from json string using serde
+
     pub fn from_json(config_json: &'a str) -> Config<'a> {
-        let config: Config = serde_json::from_str(config_json).unwrap();
+        let raw_config: Value = serde_json::from_str(config_json).unwrap();
+        let mut config = Config::default();
+        config.hash_length = raw_config["hash_length"]
+            .as_str()
+            .unwrap_or(common::DEF_HASH_LENGTH.to_string().as_str())
+            .parse::<u32>()
+            .unwrap();
+        config.lanes = raw_config["parallelism"]
+            .as_str()
+            .unwrap_or(common::DEF_LANES.to_string().as_str())
+            .parse::<u32>()
+            .unwrap();
+        config.mem_cost = raw_config["memory"]
+            .as_str()
+            .unwrap_or(common::DEF_MEMORY.to_string().as_str())
+            .parse::<u32>()
+            .unwrap();
+        config.time_cost = raw_config["iterations"]
+            .as_str()
+            .unwrap_or(common::DEF_TIME.to_string().as_str())
+            .parse::<u32>()
+            .unwrap();
+        //DEFAULTS
+        config.thread_mode =
+            ThreadMode::from_str(raw_config["thread_mode"].as_str().unwrap_or_default()).unwrap();
+        config.variant =
+            Variant::from_str(raw_config["variant"].as_str().unwrap_or_default()).unwrap();
+        config.version =
+            Version::from_str(raw_config["version"].as_str().unwrap_or_default()).unwrap();
         config
     }
 }
