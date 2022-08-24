@@ -6,12 +6,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use serde::Deserialize;
+
 use crate::error::Error;
 use crate::result::Result;
 use std::fmt;
 
 /// The Argon2 version.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Deserialize)]
 pub enum Version {
     /// Version 0x10.
     Version10 = 0x10,

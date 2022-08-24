@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use serde::Deserialize;
+
 use crate::common;
 use crate::thread_mode::ThreadMode;
 use crate::variant::Variant;
@@ -29,7 +31,7 @@ use crate::version::Version;
 /// assert_eq!(config.variant, Variant::Argon2i);
 /// assert_eq!(config.version, Version::Version13);
 /// ```
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Config<'a> {
     /// The associated data.
     pub ad: &'a [u8],
@@ -63,6 +65,11 @@ impl<'a> Config<'a> {
     pub fn uses_sequential(&self) -> bool {
         self.thread_mode == ThreadMode::Sequential || self.lanes == 1
     }
+    // create config object from json string using serde
+    pub fn from_json(config_json: &'a str) -> Config<'a> {
+        let config: Config = serde_json::from_str(config_json).unwrap();
+        config
+    }
 }
 
 impl<'a> Default for Config<'a> {
@@ -92,11 +99,9 @@ mod tests {
     #[test]
     fn default_returns_correct_instance() {
         let config = Config::default();
-        assert_eq!(config.ad, &[]);
         assert_eq!(config.hash_length, 32);
         assert_eq!(config.lanes, 1);
         assert_eq!(config.mem_cost, 4096);
-        assert_eq!(config.secret, &[]);
         assert_eq!(config.thread_mode, ThreadMode::Sequential);
         assert_eq!(config.time_cost, 3);
         assert_eq!(config.variant, Variant::Argon2i);

@@ -1,6 +1,6 @@
 // Copyright (c) 2017 Martijn Rijkeboer <mrr@sru-systems.com>
 //
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// Licensed under the Apache Licens&e, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
@@ -17,6 +17,7 @@ use crate::variant::Variant;
 use crate::version::Version;
 
 use constant_time_eq::constant_time_eq;
+use wasm_bindgen::prelude::*;
 
 /// Returns the length of the encoded string.
 ///
@@ -95,11 +96,19 @@ pub fn encoded_len(
 )]
 /// let encoded = argon2::hash_encoded(pwd, salt, &config).unwrap();
 /// ```
-pub fn hash_encoded(pwd: &[u8], salt: &[u8], config: &Config) -> Result<String> {
-    let context = Context::new(config.clone(), pwd, salt)?;
+///
+pub fn hash_encoded(pwd: &[u8], salt: &[u8], config: &Config) -> String {
+    let context = Context::new(config.clone(), pwd, salt).unwrap();
+
     let hash = run(&context);
     let encoded = encoding::encode_string(&context, &hash);
-    Ok(encoded)
+    encoded
+}
+
+#[wasm_bindgen]
+pub fn hash_encoded_js(pwd: String, salt: String, config_json: String) -> String {
+    let config = Config::from_json(config_json.as_str());
+    hash_encoded(pwd.as_bytes(), salt.as_bytes(), &config)
 }
 
 /// Hashes the password and returns the hash as a vector.
@@ -145,7 +154,6 @@ pub fn hash_raw(pwd: &[u8], salt: &[u8], config: &Config) -> Result<Vec<u8>> {
     Ok(hash)
 }
 
-
 /// Verifies the password with the encoded hash.
 ///
 /// # Examples
@@ -180,7 +188,11 @@ pub fn verify_encoded(encoded: &str, pwd: &[u8]) -> Result<bool> {
 /// ```
 pub fn verify_encoded_ext(encoded: &str, pwd: &[u8], secret: &[u8], ad: &[u8]) -> Result<bool> {
     let decoded = encoding::decode_string(encoded)?;
-    let threads = if cfg!(feature = "crossbeam-utils") { decoded.parallelism } else { 1 };
+    let threads = if cfg!(feature = "crossbeam-utils") {
+        decoded.parallelism
+    } else {
+        1
+    };
     let config = Config {
         variant: decoded.variant,
         version: decoded.version,

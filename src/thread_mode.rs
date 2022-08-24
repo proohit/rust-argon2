@@ -7,8 +7,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use serde::Deserialize;
+
 /// The thread mode used to perform the hashing.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize)]
 pub enum ThreadMode {
     /// Run in one thread.
     Sequential,

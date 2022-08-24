@@ -6,12 +6,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use serde::Deserialize;
+
 use crate::error::Error;
 use crate::result::Result;
 use std::fmt;
 
 /// The Argon2 variant.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Deserialize)]
 pub enum Variant {
     /// Argon2 using data-dependent memory access to thwart tradeoff attacks.
     /// Recommended for cryptocurrencies and backend servers.

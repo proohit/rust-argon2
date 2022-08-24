@@ -5,6 +5,10 @@ Rust library for hashing passwords using
 function that won the
 [Password Hashing Competition (PHC)](https://password-hashing.net).
 
+## Build to WASM
+
+wasm-pack build --out-dir rust-argon2-wasm --out-name rust-argon2-wasm
+
 ## Usage
 
 To use `rust-argon2`, add the following to your Cargo.toml:
@@ -19,7 +23,6 @@ And the following to your crate root:
 ```rust
 extern crate argon2;
 ```
-
 
 ## Examples
 
@@ -59,7 +62,6 @@ let matches = argon2::verify_encoded(&hash, password).unwrap();
 assert!(matches);
 ```
 
-
 ## Limitations
 
 This crate has the same limitation as the `blake2-rfc` crate that it uses.
@@ -71,15 +73,12 @@ present a false assurance.
 This version uses the standard implementation and does not yet implement
 optimizations. Therefore, it is not the fastest implementation available.
 
-
 ## License
 
 Rust-argon2 is dual licensed under the [MIT](LICENSE-MIT) and
 [Apache 2.0](LICENSE-APACHE) licenses, the same licenses as the Rust compiler.
 
-
 ## Contributions
 
 Contributions are welcome. By submitting a pull request you are agreeing to
 make you work available under the license terms of the Rust-argon2 project.
-
