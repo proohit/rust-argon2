@@ -8,7 +8,7 @@
 
 use std::str::FromStr;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::common;
@@ -34,7 +34,7 @@ use crate::version::Version;
 /// assert_eq!(config.variant, Variant::Argon2i);
 /// assert_eq!(config.version, Version::Version13);
 /// ```
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Config<'a> {
     /// The associated data.
     pub ad: &'a [u8],
@@ -94,7 +94,7 @@ impl<'a> Config<'a> {
             .unwrap_or(common::DEF_TIME.to_string().as_str())
             .parse::<u32>()
             .unwrap();
-        config.time_cost = raw_config["stop_at_iteration"]
+        config.stop_at_iteration = raw_config["stop_at_iteration"]
             .as_str()
             .unwrap_or("0")
             .parse::<u32>()

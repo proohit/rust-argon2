@@ -112,6 +112,13 @@ pub fn hash_encoded(pwd: &[u8], salt: &[u8], config: &Config) -> String {
 pub fn hash_encoded_js(pwd: String, salt: String, config_json: String) -> String {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     let config = Config::from_json(config_json.as_str());
+    web_sys::console::log_1(&JsValue::from_str(
+        format!(
+            "Running Argon2 with config: {}",
+            serde_json::to_string(&config).unwrap()
+        )
+        .as_str(),
+    ));
     let hash = hash_encoded(pwd.as_bytes(), salt.as_bytes(), &config);
     let result = json!({
         "hash": hash,

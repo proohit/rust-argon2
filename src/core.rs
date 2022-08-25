@@ -15,7 +15,6 @@ use crate::version::Version;
 use blake2b_simd::Params;
 #[cfg(feature = "crossbeam-utils")]
 use crossbeam_utils::thread::scope;
-use serde_json::{json, Value};
 
 /// Position of the block currently being operated on.
 #[derive(Clone, Debug)]
