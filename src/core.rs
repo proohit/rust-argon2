@@ -10,11 +10,13 @@ use crate::block::Block;
 use crate::common;
 use crate::context::Context;
 use crate::memory::Memory;
+use crate::result::{Argon2Result, Argon2Value};
 use crate::variant::Variant;
 use crate::version::Version;
 use blake2b_simd::Params;
 #[cfg(feature = "crossbeam-utils")]
 use crossbeam_utils::thread::scope;
+use serde::__private::from_utf8_lossy;
 
 /// Position of the block currently being operated on.
 #[derive(Clone, Debug)]
@@ -26,8 +28,8 @@ struct Position {
 }
 
 /// Initializes the memory.
-pub fn initialize(context: &Context, memory: &mut Memory) {
-    fill_first_blocks(context, memory, &mut h0(context));
+pub fn initialize(context: &Context, memory: &mut Memory, state: &mut Argon2Result) {
+    fill_first_blocks(context, memory, &mut h0(context), state);
 }
 
 /// Fills all the memory blocks.
@@ -169,7 +171,12 @@ fn fill_block(prev_block: &Block, ref_block: &Block, next_block: &mut Block, wit
     *next_block ^= &block_r;
 }
 
-fn fill_first_blocks(context: &Context, memory: &mut Memory, h0: &mut [u8]) {
+fn fill_first_blocks(
+    context: &Context,
+    memory: &mut Memory,
+    h0: &mut [u8],
+    state: &mut Argon2Result,
+) {
     for lane in 0..context.config.lanes {
         let start = common::PREHASH_DIGEST_LENGTH;
         // H'(H0||0||i)
@@ -177,10 +184,27 @@ fn fill_first_blocks(context: &Context, memory: &mut Memory, h0: &mut [u8]) {
         h0[(start + 4)..(start + 8)].clone_from_slice(&u32::to_le_bytes(lane));
 
         hprime(memory[(lane, 0)].as_u8_mut(), &h0);
-
+        let mut block = &memory[(lane, 0)];
+        state.state.add_value(
+            format!("B[{}][{}]", lane, 0),
+            Argon2Value::new(
+                from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string(),
+                from_utf8_lossy(&h0[start..start + 8]).to_string(),
+                from_utf8_lossy(block.as_u8()).to_string(),
+            ),
+        );
         // H'(H0||1||i)
         h0[start..(start + 4)].clone_from_slice(&u32::to_le_bytes(1));
         hprime(memory[(lane, 1)].as_u8_mut(), &h0);
+        block = &memory[(lane, 0)];
+        state.state.add_value(
+            format!("B[{}][{}]", lane, 1),
+            Argon2Value::new(
+                from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string(),
+                from_utf8_lossy(&h0[start..start + 8]).to_string(),
+                from_utf8_lossy(block.as_u8()).to_string(),
+            ),
+        );
     }
 }
 

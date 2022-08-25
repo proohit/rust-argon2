@@ -11,13 +11,13 @@ use crate::context::Context;
 use crate::core;
 use crate::encoding;
 use crate::memory::Memory;
+use crate::result::Argon2Result;
 use crate::result::Result;
 use crate::thread_mode::ThreadMode;
 use crate::variant::Variant;
 use crate::version::Version;
 
 use constant_time_eq::constant_time_eq;
-use serde_json::json;
 use wasm_bindgen::prelude::*;
 extern crate console_error_panic_hook;
 use std::panic;
@@ -100,12 +100,13 @@ pub fn encoded_len(
 /// let encoded = argon2::hash_encoded(pwd, salt, &config).unwrap();
 /// ```
 ///
-pub fn hash_encoded(pwd: &[u8], salt: &[u8], config: &Config) -> String {
+pub fn hash_encoded(pwd: &[u8], salt: &[u8], config: &Config, state: &mut Argon2Result) -> String {
     let context = Context::new(config.clone(), pwd, salt).unwrap();
 
-    let hash = run(&context);
+    let hash = run(&context, state);
     let encoded = encoding::encode_string(&context, &hash);
-    encoded
+    state.set_hash(&encoded);
+    return encoded;
 }
 
 #[wasm_bindgen]
@@ -119,13 +120,10 @@ pub fn hash_encoded_js(pwd: String, salt: String, config_json: String) -> String
         )
         .as_str(),
     ));
-    let hash = hash_encoded(pwd.as_bytes(), salt.as_bytes(), &config);
-    let result = json!({
-        "hash": hash,
-        "state": {}
-    });
+    let mut result = Argon2Result::new();
 
-    result.to_string()
+    hash_encoded(pwd.as_bytes(), salt.as_bytes(), &config, &mut result);
+    result.to_json()
 }
 
 /// Hashes the password and returns the hash as a vector.
@@ -167,7 +165,7 @@ pub fn hash_encoded_js(pwd: String, salt: String, config_json: String) -> String
 /// ```
 pub fn hash_raw(pwd: &[u8], salt: &[u8], config: &Config) -> Result<Vec<u8>> {
     let context = Context::new(config.clone(), pwd, salt)?;
-    let hash = run(&context);
+    let hash = run(&context, &mut Argon2Result::new());
     Ok(hash)
 }
 
@@ -248,13 +246,13 @@ pub fn verify_raw(pwd: &[u8], salt: &[u8], hash: &[u8], config: &Config) -> Resu
         ..config.clone()
     };
     let context = Context::new(config, pwd, salt)?;
-    let calculated_hash = run(&context);
+    let calculated_hash = run(&context, &mut Argon2Result::new());
     Ok(constant_time_eq(hash, &calculated_hash))
 }
 
-fn run(context: &Context) -> Vec<u8> {
+fn run(context: &Context, state: &mut Argon2Result) -> Vec<u8> {
     let mut memory = Memory::new(context.config.lanes, context.lane_length);
-    core::initialize(context, &mut memory);
+    core::initialize(context, &mut memory, state);
     core::fill_memory_blocks(context, &mut memory);
     core::finalize(context, &memory)
 }
