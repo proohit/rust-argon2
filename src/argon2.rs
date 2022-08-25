@@ -17,6 +17,7 @@ use crate::variant::Variant;
 use crate::version::Version;
 
 use constant_time_eq::constant_time_eq;
+use serde_json::json;
 use wasm_bindgen::prelude::*;
 extern crate console_error_panic_hook;
 use std::panic;
@@ -111,7 +112,13 @@ pub fn hash_encoded(pwd: &[u8], salt: &[u8], config: &Config) -> String {
 pub fn hash_encoded_js(pwd: String, salt: String, config_json: String) -> String {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     let config = Config::from_json(config_json.as_str());
-    hash_encoded(pwd.as_bytes(), salt.as_bytes(), &config)
+    let hash = hash_encoded(pwd.as_bytes(), salt.as_bytes(), &config);
+    let result = json!({
+        "hash": hash,
+        "state": {}
+    });
+
+    result.to_string()
 }
 
 /// Hashes the password and returns the hash as a vector.
@@ -206,6 +213,7 @@ pub fn verify_encoded_ext(encoded: &str, pwd: &[u8], secret: &[u8], ad: &[u8]) -
         secret,
         ad,
         hash_length: decoded.hash.len() as u32,
+        stop_at_iteration: 0,
     };
     verify_raw(pwd, &decoded.salt, &decoded.hash, &config)
 }

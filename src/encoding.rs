@@ -377,6 +377,7 @@ mod tests {
             time_cost: 3,
             variant: Variant::Argon2i,
             version: Version::Version13,
+            stop_at_iteration: 0,
         };
         let pwd = b"password".to_vec();
         let salt = b"salt1234".to_vec();

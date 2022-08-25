@@ -62,6 +62,8 @@ pub struct Config<'a> {
 
     /// The version number.
     pub version: Version,
+
+    pub stop_at_iteration: u32,
 }
 
 impl<'a> Config<'a> {
@@ -90,6 +92,11 @@ impl<'a> Config<'a> {
         config.time_cost = raw_config["iterations"]
             .as_str()
             .unwrap_or(common::DEF_TIME.to_string().as_str())
+            .parse::<u32>()
+            .unwrap();
+        config.time_cost = raw_config["stop_at_iteration"]
+            .as_str()
+            .unwrap_or("0")
             .parse::<u32>()
             .unwrap();
         //DEFAULTS
@@ -127,6 +134,7 @@ impl<'a> Default for Config<'a> {
             time_cost: common::DEF_TIME,
             variant: Variant::default(),
             version: Version::default(),
+            stop_at_iteration: 0,
         }
     }
 }

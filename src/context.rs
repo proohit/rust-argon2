@@ -100,7 +100,6 @@ impl<'a> Context<'a> {
         let segment_length = memory_blocks / (lanes * common::SYNC_POINTS);
         let memory_blocks = segment_length * (lanes * common::SYNC_POINTS);
         let lane_length = segment_length * common::SYNC_POINTS;
-
         Ok(Context {
             config,
             lane_length,
@@ -134,6 +133,7 @@ mod tests {
             time_cost: 3,
             variant: Variant::Argon2i,
             version: Version::Version13,
+            stop_at_iteration: 0,
         };
         let pwd = b"password";
         let salt = b"somesalt";

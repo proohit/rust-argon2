@@ -15,6 +15,7 @@ use crate::version::Version;
 use blake2b_simd::Params;
 #[cfg(feature = "crossbeam-utils")]
 use crossbeam_utils::thread::scope;
+use serde_json::{json, Value};
 
 /// Position of the block currently being operated on.
 #[derive(Clone, Debug)]
@@ -175,6 +176,7 @@ fn fill_first_blocks(context: &Context, memory: &mut Memory, h0: &mut [u8]) {
         // H'(H0||0||i)
         h0[start..(start + 4)].clone_from_slice(&u32::to_le_bytes(0));
         h0[(start + 4)..(start + 8)].clone_from_slice(&u32::to_le_bytes(lane));
+
         hprime(memory[(lane, 0)].as_u8_mut(), &h0);
 
         // H'(H0||1||i)

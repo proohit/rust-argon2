@@ -49,6 +49,8 @@ pub enum Error {
     /// The time cost (passes) is too small (minimum is 1).
     TimeTooSmall,
 
+    StopAtIterationTooLarge,
+
     /// The time cost (passes) is too large (maximum is 2^32 - 1).
     TimeTooLarge,
 
@@ -96,6 +98,7 @@ impl Error {
             Error::IncorrectType => "There is no such type of Argon2",
             Error::IncorrectVersion => "There is no such version of Argon2",
             Error::DecodingFail => "Decoding failed",
+            Error::StopAtIterationTooLarge => "Stop at iteration must be smaller than time cost",
         }
     }
 }
