@@ -7,9 +7,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::str::FromStr;
-
 use serde::Deserialize;
+use std::str::FromStr;
 
 /// The thread mode used to perform the hashing.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize)]
@@ -37,6 +36,13 @@ impl ThreadMode {
     pub fn from_threads(threads: u32) -> ThreadMode {
         assert_eq!(threads, 1);
         Self::default()
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ThreadMode::Sequential => "sequential",
+            ThreadMode::Parallel => "parallel",
+        }
     }
 }
 

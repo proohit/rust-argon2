@@ -37,6 +37,13 @@ impl Version {
         }
     }
 
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Version::Version10 => "16",
+            Version::Version13 => "19",
+        }
+    }
+
     /// Attempts to create a version from an u32.
     pub fn from_u32(val: u32) -> Result<Version> {
         match val {

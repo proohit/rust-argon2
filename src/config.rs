@@ -93,12 +93,24 @@ impl<'a> Config<'a> {
             .parse::<u32>()
             .unwrap();
         //DEFAULTS
-        config.thread_mode =
-            ThreadMode::from_str(raw_config["thread_mode"].as_str().unwrap_or_default()).unwrap();
-        config.variant =
-            Variant::from_str(raw_config["variant"].as_str().unwrap_or_default()).unwrap();
-        config.version =
-            Version::from_str(raw_config["version"].as_str().unwrap_or_default()).unwrap();
+        config.thread_mode = ThreadMode::from_str(
+            raw_config["thread_mode"]
+                .as_str()
+                .unwrap_or(ThreadMode::default().as_str()),
+        )
+        .unwrap();
+        config.variant = Variant::from_str(
+            raw_config["variant"]
+                .as_str()
+                .unwrap_or(Variant::default().as_uppercase_str()),
+        )
+        .unwrap();
+        config.version = Version::from_str(
+            raw_config["version"]
+                .as_str()
+                .unwrap_or(Version::default().as_str()),
+        )
+        .unwrap();
         config
     }
 }
