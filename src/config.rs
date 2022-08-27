@@ -9,7 +9,7 @@
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::common;
 use crate::thread_mode::ThreadMode;
@@ -119,6 +119,19 @@ impl<'a> Config<'a> {
         )
         .unwrap();
         config
+    }
+
+    pub fn default_json() -> String {
+        json!({
+            "hash_length": common::DEF_HASH_LENGTH,
+            "parallelism": common::DEF_LANES,
+            "memory": common::DEF_MEMORY,
+            "iterations": common::DEF_TIME,
+            "thread_mode": ThreadMode::default().as_str(),
+            "variant": Variant::default().as_uppercase_str(),
+            "version": Version::default().as_str(),
+        })
+        .to_string()
     }
 }
 

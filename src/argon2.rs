@@ -126,6 +126,11 @@ pub fn hash_encoded_js(pwd: String, salt: String, config_json: String) -> String
     result.to_json()
 }
 
+#[wasm_bindgen]
+pub fn create_default_config() -> String {
+    Config::default_json()
+}
+
 /// Hashes the password and returns the hash as a vector.
 ///
 /// # Examples
