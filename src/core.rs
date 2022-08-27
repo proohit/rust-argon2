@@ -10,7 +10,7 @@ use crate::block::Block;
 use crate::common;
 use crate::context::Context;
 use crate::memory::Memory;
-use crate::result::{Argon2Result, Argon2Value};
+use crate::result::{Argon2Result, Argon2State, Argon2Value, Argon2ValueBuilder};
 use crate::variant::Variant;
 use crate::version::Version;
 use blake2b_simd::Params;
@@ -33,9 +33,9 @@ pub fn initialize(context: &Context, memory: &mut Memory, state: &mut Argon2Resu
 }
 
 /// Fills all the memory blocks.
-pub fn fill_memory_blocks(context: &Context, memory: &mut Memory) {
+pub fn fill_memory_blocks(context: &Context, memory: &mut Memory, state: &mut Argon2Result) {
     if context.config.uses_sequential() {
-        fill_memory_blocks_st(context, memory);
+        fill_memory_blocks_st(context, memory, state);
     } else {
         fill_memory_blocks_mt(context, memory);
     }
@@ -185,25 +185,25 @@ fn fill_first_blocks(
 
         hprime(memory[(lane, 0)].as_u8_mut(), &h0);
         let mut block = &memory[(lane, 0)];
-        state.state.add_value(
-            format!("B[{}][{}]", lane, 0),
-            Argon2Value::new(
-                from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string(),
-                from_utf8_lossy(&h0[start..start + 8]).to_string(),
-                from_utf8_lossy(block.as_u8()).to_string(),
-            ),
+        state.state.set_value(
+            Argon2State::memory_state_key(lane, 0),
+            Argon2Value::builder()
+                .first_param(from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string())
+                .second_param(from_utf8_lossy(&h0[start..start + 8]).to_string())
+                .hash(from_utf8_lossy(block.as_u8()).to_string())
+                .build(),
         );
         // H'(H0||1||i)
         h0[start..(start + 4)].clone_from_slice(&u32::to_le_bytes(1));
         hprime(memory[(lane, 1)].as_u8_mut(), &h0);
         block = &memory[(lane, 0)];
-        state.state.add_value(
-            format!("B[{}][{}]", lane, 1),
-            Argon2Value::new(
-                from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string(),
-                from_utf8_lossy(&h0[start..start + 8]).to_string(),
-                from_utf8_lossy(block.as_u8()).to_string(),
-            ),
+        state.state.set_value(
+            Argon2State::memory_state_key(lane, 1),
+            Argon2Value::builder()
+                .first_param(from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string())
+                .second_param(from_utf8_lossy(&h0[start..start + 8]).to_string())
+                .hash(from_utf8_lossy(block.as_u8()).to_string())
+                .build(),
         );
     }
 }
@@ -221,7 +221,7 @@ fn fill_memory_blocks_mt(context: &Context, memory: &mut Memory) {
                         index: 0,
                     };
                     scoped.spawn(move |_| {
-                        fill_segment(context, &position, mem);
+                        fill_segment(context, &position, mem, &mut Argon2Result::new());
                     });
                 }
             });
@@ -234,7 +234,7 @@ fn fill_memory_blocks_mt(_: &Context, _: &mut Memory) {
     unimplemented!()
 }
 
-fn fill_memory_blocks_st(context: &Context, memory: &mut Memory) {
+fn fill_memory_blocks_st(context: &Context, memory: &mut Memory, state: &mut Argon2Result) {
     for p in 0..context.config.time_cost {
         for s in 0..common::SYNC_POINTS {
             for l in 0..context.config.lanes {
@@ -244,13 +244,18 @@ fn fill_memory_blocks_st(context: &Context, memory: &mut Memory) {
                     slice: s,
                     index: 0,
                 };
-                fill_segment(context, &position, memory);
+                fill_segment(context, &position, memory, state);
             }
         }
     }
 }
 
-fn fill_segment(context: &Context, position: &Position, memory: &mut Memory) {
+fn fill_segment(
+    context: &Context,
+    position: &Position,
+    memory: &mut Memory,
+    state: &mut Argon2Result,
+) {
     let mut position = position.clone();
     let data_independent_addressing = (context.config.variant == Variant::Argon2i)
         || (context.config.variant == Variant::Argon2id && position.pass == 0)
@@ -321,7 +326,20 @@ fn fill_segment(context: &Context, position: &Position, memory: &mut Memory) {
         let pseudo_rand_u32 = (pseudo_rand & 0xFFFF_FFFF) as u32;
         let same_lane = ref_lane == (position.lane as u64);
         let ref_index = index_alpha(context, &position, pseudo_rand_u32, same_lane);
+        let current_val = state
+            .state
+            .get_memory_state_value(position.lane, position.index);
 
+        get_ref_lane(position.pass, position.slice, position.lane).and_then(|ref_lane| {
+            let updated_val = Argon2ValueBuilder::from_argon2_value(current_val)
+                .ref_lane(ref_lane)
+                .ref_index(ref_index.clone().to_string())
+                .build();
+            state
+                .state
+                .set_memory_state_value(position.lane, position.index, updated_val);
+            Some(())
+        });
         // 2 Creating a new block
         let index = context.lane_length as u64 * ref_lane + ref_index as u64;
         let mut curr_block = memory[curr_offset].clone();
@@ -338,6 +356,14 @@ fn fill_segment(context: &Context, position: &Position, memory: &mut Memory) {
         memory[curr_offset] = curr_block;
         curr_offset += 1;
         prev_offset += 1;
+    }
+}
+
+fn get_ref_lane(pass: u32, slice: u32, lane: u32) -> Option<String> {
+    if (pass == 0) && (slice == 0) {
+        Some(lane.to_string())
+    } else {
+        None
     }
 }
 
