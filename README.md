@@ -4,10 +4,7 @@ Rust library for hashing passwords using
 [Argon2](https://github.com/P-H-C/phc-winner-argon2), the password-hashing
 function that won the
 [Password Hashing Competition (PHC)](https://password-hashing.net).
-
-## Build to WASM
-
-wasm-pack build --out-dir rust-argon2-wasm --out-name rust-argon2-wasm
+Fork of sru-systems/rust-argon2 to make it accessible via WebAssembly.
 
 ## Usage
 
@@ -28,38 +25,26 @@ extern crate argon2;
 
 Create a password hash using the defaults and verify it:
 
-```rust
-use argon2::{self, Config};
+```javascript
+import { hash_encoded_js, create_default_config } from "rust-argon2-wasm";
 
-let password = b"password";
-let salt = b"randomsalt";
-let config = Config::default();
-let hash = argon2::hash_encoded(password, salt, &config).unwrap();
-let matches = argon2::verify_encoded(&hash, password).unwrap();
-assert!(matches);
+const res = JSON.parse(
+  hash_encoded_js("password", "salt11bytes", create_default_config())
+);
+
+console.log(res.hash);
 ```
 
-Create a password hash with custom settings and verify it:
+## Requirements
 
-```rust
-use argon2::{self, Config, ThreadMode, Variant, Version};
+- rust toolchain
+- wasm32-unknown-unknown target
+- wasm-pack
 
-let password = b"password";
-let salt = b"othersalt";
-let config = Config {
-    variant: Variant::Argon2i,
-    version: Version::Version13,
-    mem_cost: 65536,
-    time_cost: 10,
-    lanes: 4,
-    thread_mode: ThreadMode::Parallel,
-    secret: &[],
-    ad: &[],
-    hash_length: 32
-};
-let hash = argon2::hash_encoded(password, salt, &config).unwrap();
-let matches = argon2::verify_encoded(&hash, password).unwrap();
-assert!(matches);
+## Build Argon2 WASM Package
+
+```sh
+wasm-pack build
 ```
 
 ## Limitations

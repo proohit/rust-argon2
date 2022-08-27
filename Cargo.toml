@@ -1,5 +1,5 @@
 [package]
-name = "rust-argon2"
+name = "rust-argon2-wasm"
 version = "1.0.0"
 authors = ["Martijn Rijkeboer <mrr@sru-systems.com>"]
 edition = "2018"
@@ -11,10 +11,10 @@ repository = "https://github.com/sru-systems/rust-argon2"
 readme = "README.md"
 keywords = ["argon2", "argon2d", "argon2i", "hash", "password"]
 
-rust-argon2 = { version = "0.8.1", default-features = false }
+rust-argon2-wasm = { version = "1.0.0", default-features = false }
 
 [lib]
-name = "argon2"
+name = "rust_argon2_wasm"
 crate-type =["cdylib"]
 
 [features]
