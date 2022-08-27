@@ -191,6 +191,10 @@ pub fn verify_encoded(encoded: &str, pwd: &[u8]) -> Result<bool> {
     verify_encoded_ext(encoded, pwd, &[], &[])
 }
 
+#[wasm_bindgen]
+pub fn verify_encoded_js(encoded: String, pwd: String) -> bool {
+    verify_encoded_ext(encoded.as_str(), pwd.as_bytes(), &[], &[]).unwrap()
+}
 /// Verifies the password with the encoded hash, secret and associated data.
 ///
 /// # Examples

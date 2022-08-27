@@ -6,33 +6,24 @@ function that won the
 [Password Hashing Competition (PHC)](https://password-hashing.net).
 Fork of sru-systems/rust-argon2 to make it accessible via WebAssembly.
 
-## Usage
-
-To use `rust-argon2`, add the following to your Cargo.toml:
-
-```toml
-[dependencies]
-rust-argon2 = "1.0"
-```
-
-And the following to your crate root:
-
-```rust
-extern crate argon2;
-```
-
 ## Examples
 
 Create a password hash using the defaults and verify it:
 
 ```javascript
-import { hash_encoded_js, create_default_config } from "rust-argon2-wasm";
+import {
+  hash_encoded_js,
+  create_default_config,
+  verify_encoded_js,
+} from "rust-argon2-wasm";
 
 const res = JSON.parse(
   hash_encoded_js("password", "salt11bytes", create_default_config())
 );
 
 console.log(res.hash);
+
+console.log(verify_encoded_js(res.hash, "password"));
 ```
 
 ## Requirements
