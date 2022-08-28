@@ -186,7 +186,7 @@ fn fill_first_blocks(
         hprime(memory[(lane, 0)].as_u8_mut(), &h0);
         let mut block = &memory[(lane, 0)];
         state.state.set_value(
-            Argon2State::memory_state_key(lane, 0),
+            Argon2State::memory_state_key(lane, 0, 0),
             Argon2Value::builder()
                 .first_param(from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string())
                 .second_param(from_utf8_lossy(&h0[start..start + 8]).to_string())
@@ -198,7 +198,7 @@ fn fill_first_blocks(
         hprime(memory[(lane, 1)].as_u8_mut(), &h0);
         block = &memory[(lane, 0)];
         state.state.set_value(
-            Argon2State::memory_state_key(lane, 1),
+            Argon2State::memory_state_key(lane, 1, 0),
             Argon2Value::builder()
                 .first_param(from_utf8_lossy(&h0[0..common::PREHASH_DIGEST_LENGTH]).to_string())
                 .second_param(from_utf8_lossy(&h0[start..start + 8]).to_string())
@@ -326,18 +326,22 @@ fn fill_segment(
         let pseudo_rand_u32 = (pseudo_rand & 0xFFFF_FFFF) as u32;
         let same_lane = ref_lane == (position.lane as u64);
         let ref_index = index_alpha(context, &position, pseudo_rand_u32, same_lane);
-        let current_val = state
-            .state
-            .get_memory_state_value(position.lane, position.index);
+        let current_val =
+            state
+                .state
+                .get_memory_state_value(position.lane, position.index, position.pass);
 
-        get_ref_lane(position.pass, position.slice, position.lane).and_then(|ref_lane| {
+        get_ref_lane(position.pass, position.slice, position.lane, ref_lane).and_then(|ref_lane| {
             let updated_val = Argon2ValueBuilder::from_argon2_value(current_val)
                 .ref_lane(ref_lane)
                 .ref_index(ref_index.clone().to_string())
                 .build();
-            state
-                .state
-                .set_memory_state_value(position.lane, position.index, updated_val);
+            state.state.set_memory_state_value(
+                position.lane,
+                position.index,
+                position.pass,
+                updated_val,
+            );
             Some(())
         });
         // 2 Creating a new block
@@ -359,9 +363,11 @@ fn fill_segment(
     }
 }
 
-fn get_ref_lane(pass: u32, slice: u32, lane: u32) -> Option<String> {
+fn get_ref_lane(pass: u32, slice: u32, lane: u32, pseudo_rand: u64) -> Option<String> {
     if (pass == 0) && (slice == 0) {
         Some(lane.to_string())
+    } else if pass > 0 {
+        Some(pseudo_rand.to_string())
     } else {
         None
     }

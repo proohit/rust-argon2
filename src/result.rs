@@ -74,23 +74,29 @@ impl Argon2State {
             .insert(key, value.to_json_value());
     }
 
-    pub fn set_memory_state_value(&mut self, lane: u32, index: u32, value: Argon2Value) {
-        self.set_value(Argon2State::memory_state_key(lane, index), value);
+    pub fn set_memory_state_value(
+        &mut self,
+        lane: u32,
+        index: u32,
+        iteration: u32,
+        value: Argon2Value,
+    ) {
+        self.set_value(Argon2State::memory_state_key(lane, index, iteration), value);
     }
 
-    pub fn get_memory_state_value(&mut self, lane: u32, index: u32) -> Argon2Value {
+    pub fn get_memory_state_value(&mut self, lane: u32, index: u32, iteration: u32) -> Argon2Value {
         let value = self
             .hash_map
             .as_object_mut()
             .unwrap()
-            .get(&Argon2State::memory_state_key(lane, index))
+            .get(&Argon2State::memory_state_key(lane, index, iteration))
             .unwrap_or(&Argon2Value::builder().build().to_json_value())
             .clone();
         serde_json::from_value(value).unwrap()
     }
 
-    pub fn memory_state_key(lane: u32, index: u32) -> String {
-        format!("B[{}][{}]", lane, index)
+    pub fn memory_state_key(lane: u32, index: u32, iteration: u32) -> String {
+        format!("B^{}[{}][{}]", iteration, lane, index)
     }
 }
 
@@ -172,17 +178,5 @@ impl Argon2ValueBuilder {
             self.ref_lane,
             self.ref_index,
         )
-    }
-}
-
-pub enum Argon2RefValue {
-    NoRefYet,
-}
-
-impl Argon2RefValue {
-    pub fn as_string(&self) -> String {
-        match self {
-            Argon2RefValue::NoRefYet => String::from("No Ref yet"),
-        }
     }
 }
