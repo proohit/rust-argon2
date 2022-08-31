@@ -7,12 +7,12 @@
 // except according to those terms.
 
 use crate::block::Block;
-use crate::common;
 use crate::context::Context;
 use crate::memory::Memory;
-use crate::result::{Argon2Result, Argon2State, Argon2Value, Argon2ValueBuilder};
+use crate::result::{Argon2Result, Argon2State, Argon2Value};
 use crate::variant::Variant;
 use crate::version::Version;
+use crate::{common, write_state_entry};
 use blake2b_simd::Params;
 #[cfg(feature = "crossbeam-utils")]
 use crossbeam_utils::thread::scope;
@@ -20,11 +20,11 @@ use serde::__private::from_utf8_lossy;
 
 /// Position of the block currently being operated on.
 #[derive(Clone, Debug)]
-struct Position {
-    pass: u32,
-    lane: u32,
-    slice: u32,
-    index: u32,
+pub struct Position {
+    pub pass: u32,
+    pub lane: u32,
+    pub slice: u32,
+    pub index: u32,
 }
 
 /// Initializes the memory.
@@ -326,24 +326,9 @@ fn fill_segment(
         let pseudo_rand_u32 = (pseudo_rand & 0xFFFF_FFFF) as u32;
         let same_lane = ref_lane == (position.lane as u64);
         let ref_index = index_alpha(context, &position, pseudo_rand_u32, same_lane);
-        let current_val =
-            state
-                .state
-                .get_memory_state_value(position.lane, position.index, position.pass);
 
-        get_ref_lane(position.pass, position.slice, position.lane, ref_lane).and_then(|ref_lane| {
-            let updated_val = Argon2ValueBuilder::from_argon2_value(current_val)
-                .ref_lane(ref_lane)
-                .ref_index(ref_index.clone().to_string())
-                .build();
-            state.state.set_memory_state_value(
-                position.lane,
-                position.index,
-                position.pass,
-                updated_val,
-            );
-            Some(())
-        });
+        write_state_entry(state, &position, ref_index, ref_lane, context);
+
         // 2 Creating a new block
         let index = context.lane_length as u64 * ref_lane + ref_index as u64;
         let mut curr_block = memory[curr_offset].clone();
@@ -360,16 +345,6 @@ fn fill_segment(
         memory[curr_offset] = curr_block;
         curr_offset += 1;
         prev_offset += 1;
-    }
-}
-
-fn get_ref_lane(pass: u32, slice: u32, lane: u32, pseudo_rand: u64) -> Option<String> {
-    if (pass == 0) && (slice == 0) {
-        Some(lane.to_string())
-    } else if pass > 0 {
-        Some(pseudo_rand.to_string())
-    } else {
-        None
     }
 }
 

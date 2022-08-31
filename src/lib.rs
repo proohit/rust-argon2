@@ -95,13 +95,17 @@ mod error;
 mod memory;
 mod result;
 mod thread_mode;
+mod util;
 mod variant;
 mod version;
+mod visualization;
 
 pub use crate::argon2::*;
 pub use crate::config::Config;
 pub use crate::error::Error;
 pub use crate::result::Result;
 pub use crate::thread_mode::ThreadMode;
+pub use crate::util::*;
 pub use crate::variant::Variant;
 pub use crate::version::Version;
+pub use crate::visualization::*;

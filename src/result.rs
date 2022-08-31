@@ -33,6 +33,7 @@ pub struct Argon2Value {
     hash: String,
     ref_lane: String,
     ref_index: String,
+    ref_iteration: String,
 }
 
 #[derive(Default)]
@@ -42,6 +43,7 @@ pub struct Argon2ValueBuilder {
     hash: String,
     ref_lane: String,
     ref_index: String,
+    ref_iteration: String,
 }
 
 impl Argon2Result {
@@ -107,6 +109,7 @@ impl Argon2Value {
         hash: String,
         ref_lane: String,
         ref_index: String,
+        ref_iteration: String,
     ) -> Argon2Value {
         Argon2Value {
             first_param,
@@ -114,6 +117,7 @@ impl Argon2Value {
             hash,
             ref_index,
             ref_lane,
+            ref_iteration,
         }
     }
     pub fn builder() -> Argon2ValueBuilder {
@@ -126,6 +130,7 @@ impl Argon2Value {
             "hash": self.hash,
             "ref_lane": self.ref_lane,
             "ref_index": self.ref_index,
+            "ref_iteration": self.ref_iteration,
         })
     }
 }
@@ -138,6 +143,7 @@ impl Argon2ValueBuilder {
             hash: String::new(),
             ref_lane: String::new(),
             ref_index: String::new(),
+            ref_iteration: String::new(),
         }
     }
     pub fn from_argon2_value(value: Argon2Value) -> Argon2ValueBuilder {
@@ -147,36 +153,42 @@ impl Argon2ValueBuilder {
             hash: value.hash,
             ref_lane: value.ref_lane,
             ref_index: value.ref_index,
+            ref_iteration: value.ref_iteration,
         }
     }
-    pub fn first_param(mut self, first_param: String) -> Argon2ValueBuilder {
+    pub fn first_param<'a>(&'a mut self, first_param: String) -> &'a mut Argon2ValueBuilder {
         self.first_param = first_param;
         self
     }
-    pub fn second_param(mut self, second_param: String) -> Argon2ValueBuilder {
+    pub fn second_param<'a>(&'a mut self, second_param: String) -> &'a mut Argon2ValueBuilder {
         self.second_param = second_param;
         self
     }
-    pub fn hash(mut self, hash: String) -> Argon2ValueBuilder {
+    pub fn hash<'a>(&'a mut self, hash: String) -> &'a mut Argon2ValueBuilder {
         self.hash = hash;
         self
     }
-    pub fn ref_lane(mut self, ref_lane: String) -> Argon2ValueBuilder {
+    pub fn ref_lane<'a>(&'a mut self, ref_lane: String) -> &'a mut Argon2ValueBuilder {
         self.ref_lane = ref_lane;
         self
     }
-    pub fn ref_index(mut self, ref_index: String) -> Argon2ValueBuilder {
+    pub fn ref_index<'a>(&'a mut self, ref_index: String) -> &'a mut Argon2ValueBuilder {
         self.ref_index = ref_index;
         self
     }
+    pub fn ref_iteration<'a>(&'a mut self, ref_iteration: String) -> &'a mut Argon2ValueBuilder {
+        self.ref_iteration = ref_iteration;
+        self
+    }
 
-    pub fn build(self) -> Argon2Value {
+    pub fn build(&self) -> Argon2Value {
         Argon2Value::new(
-            self.first_param,
-            self.second_param,
-            self.hash,
-            self.ref_lane,
-            self.ref_index,
+            self.first_param.to_owned(),
+            self.second_param.to_owned(),
+            self.hash.to_owned(),
+            self.ref_lane.to_owned(),
+            self.ref_index.to_owned(),
+            self.ref_iteration.to_owned(),
         )
     }
 }
