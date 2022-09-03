@@ -1,137 +1,35 @@
-// Copyright (c) 2017 Martijn Rijkeboer <mrr@sru-systems.com>
-//
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. This file may not be copied, modified, or distributed
-// except according to those terms.
-
-use std::str::FromStr;
-
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 
-use crate::common;
 use crate::thread_mode::ThreadMode;
 use crate::variant::Variant;
 use crate::version::Version;
 
-/// Structure containing configuration settings.
-///
-/// # Examples
-///
-/// ```
-/// use argon2::{Config, ThreadMode, Variant, Version};
-///
-/// let config = Config::default();
-/// assert_eq!(config.ad, &[]);
-/// assert_eq!(config.hash_length, 32);
-/// assert_eq!(config.lanes, 1);
-/// assert_eq!(config.mem_cost, 4096);
-/// assert_eq!(config.secret, &[]);
-/// assert_eq!(config.thread_mode, ThreadMode::Sequential);
-/// assert_eq!(config.time_cost, 3);
-/// assert_eq!(config.variant, Variant::Argon2i);
-/// assert_eq!(config.version, Version::Version13);
-/// ```
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Config<'a> {
-    /// The associated data.
     pub ad: &'a [u8],
 
-    /// The length of the resulting hash.
     pub hash_length: u32,
 
-    /// The number of lanes.
     pub lanes: u32,
 
-    /// The amount of memory requested (KB).
     pub mem_cost: u32,
 
-    /// The key.
     pub secret: &'a [u8],
 
-    /// The thread mode.
     pub thread_mode: ThreadMode,
 
-    /// The number of passes.
     pub time_cost: u32,
 
-    /// The variant.
     pub variant: Variant,
 
-    /// The version number.
     pub version: Version,
 
     pub stop_at_iteration: u32,
 }
 
 impl<'a> Config<'a> {
-    pub fn uses_sequential(&self) -> bool {
-        self.thread_mode == ThreadMode::Sequential || self.lanes == 1
-    }
-
-    pub fn from_json(config_json: &'a str) -> Config<'a> {
-        let raw_config: Value = serde_json::from_str(config_json).unwrap();
-        let mut config = Config::default();
-        config.hash_length = raw_config["hash_length"]
-            .as_str()
-            .unwrap_or(common::DEF_HASH_LENGTH.to_string().as_str())
-            .parse::<u32>()
-            .unwrap();
-        config.lanes = raw_config["parallelism"]
-            .as_str()
-            .unwrap_or(common::DEF_LANES.to_string().as_str())
-            .parse::<u32>()
-            .unwrap();
-        config.mem_cost = raw_config["memory"]
-            .as_str()
-            .unwrap_or(common::DEF_MEMORY.to_string().as_str())
-            .parse::<u32>()
-            .unwrap();
-        config.time_cost = raw_config["iterations"]
-            .as_str()
-            .unwrap_or(common::DEF_TIME.to_string().as_str())
-            .parse::<u32>()
-            .unwrap();
-        config.stop_at_iteration = raw_config["stop_at_iteration"]
-            .as_str()
-            .unwrap_or("0")
-            .parse::<u32>()
-            .unwrap();
-        //DEFAULTS
-        config.thread_mode = ThreadMode::from_str(
-            raw_config["thread_mode"]
-                .as_str()
-                .unwrap_or(ThreadMode::default().as_str()),
-        )
-        .unwrap();
-        config.variant = Variant::from_str(
-            raw_config["variant"]
-                .as_str()
-                .unwrap_or(Variant::default().as_uppercase_str()),
-        )
-        .unwrap();
-        config.version = Version::from_str(
-            raw_config["version"]
-                .as_str()
-                .unwrap_or(Version::default().as_str()),
-        )
-        .unwrap();
-        config
-    }
-
-    pub fn default_json() -> String {
-        json!({
-            "hash_length": common::DEF_HASH_LENGTH,
-            "parallelism": common::DEF_LANES,
-            "memory": common::DEF_MEMORY,
-            "iterations": common::DEF_TIME,
-            "thread_mode": ThreadMode::default().as_str(),
-            "variant": Variant::default().as_uppercase_str(),
-            "version": Version::default().as_str(),
-        })
-        .to_string()
+    pub fn from_json(config_json: String) -> Config<'a> {
+        Config::default()
     }
 }
 
@@ -139,36 +37,15 @@ impl<'a> Default for Config<'a> {
     fn default() -> Config<'a> {
         Config {
             ad: &[],
-            hash_length: common::DEF_HASH_LENGTH,
-            lanes: common::DEF_LANES,
-            mem_cost: common::DEF_MEMORY,
+            hash_length: 0,
+            lanes: 0,
+            mem_cost: 0,
             secret: &[],
             thread_mode: ThreadMode::default(),
-            time_cost: common::DEF_TIME,
+            time_cost: 0,
             variant: Variant::default(),
             version: Version::default(),
             stop_at_iteration: 0,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use crate::config::Config;
-    use crate::thread_mode::ThreadMode;
-    use crate::variant::Variant;
-    use crate::version::Version;
-
-    #[test]
-    fn default_returns_correct_instance() {
-        let config = Config::default();
-        assert_eq!(config.hash_length, 32);
-        assert_eq!(config.lanes, 1);
-        assert_eq!(config.mem_cost, 4096);
-        assert_eq!(config.thread_mode, ThreadMode::Sequential);
-        assert_eq!(config.time_cost, 3);
-        assert_eq!(config.variant, Variant::Argon2i);
-        assert_eq!(config.version, Version::Version13);
     }
 }
